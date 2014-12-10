@@ -46,30 +46,32 @@ public class iTweenable : MonoBehaviour
 				}
 */
 		}
+
 	
-		public IEnumerator ShakeScaleAnimation (float time, float shakeStrength, bool loop = false, iTween.LoopType loopType = iTween.LoopType.none)
-		{
-				isTweening = true;
-		
-				Vector3 shakeAmount = new Vector3 (shakeStrength, 0, shakeStrength);
-		
-				iTween.ShakeScale (this.gameObject, iTween.Hash (iT.ShakeScale.amount, shakeAmount,
-		                                                 iT.ShakeScale.time, time,
-		                                                 iT.ShakeScale.looptype, loopType));
-		
-				yield return new WaitForSeconds (time);
-		
-				isTweening = false;
-		}
-	
-		public IEnumerator MoveToAnimation (float time, Vector3 toPos, iTween.EaseType easeType = iTween.EaseType.linear)
+		public IEnumerator MoveToAnimation (float time, Vector3 toPos, bool local = true, iTween.EaseType easeType = iTween.EaseType.linear, iTween.LoopType loopType = iTween.LoopType.none)
 		{
 				isTweening = true;
 		
 				iTween.MoveTo (this.gameObject, iTween.Hash (iT.MoveTo.position, toPos,
 		                                             iT.MoveTo.time, time,
-		                                             iT.MoveTo.islocal, true,
+		                                             iT.MoveTo.islocal, local,
+		                                             iT.MoveTo.looptype, loopType,
 		                                             iT.MoveTo.easetype, easeType));
+		
+				yield return new WaitForSeconds (time);
+		
+				isTweening = false;
+		}
+
+		public IEnumerator RotateToAnimation (float time, Vector3 toRotation, bool local = true, iTween.EaseType easeType = iTween.EaseType.linear, iTween.LoopType loopType = iTween.LoopType.none)
+		{
+				isTweening = true;
+		
+				iTween.RotateTo (this.gameObject, iTween.Hash (iT.RotateTo.rotation, toRotation,
+		                                               iT.RotateTo.time, time,
+		                                               iT.RotateTo.islocal, local,
+		                                               iT.RotateTo.looptype, loopType,
+		                                               iT.RotateTo.easetype, easeType));
 		
 				yield return new WaitForSeconds (time);
 		
@@ -103,10 +105,48 @@ public class iTweenable : MonoBehaviour
 				float scaleTime = 1 - shakeScaleRatio;
 				float shakeTime = 1 - scaleTime;
 		
-				yield return  StartCoroutine (ShakeScaleAnimation (shakeTime, strength));
+				yield return  StartCoroutine (ShakeScaleAnimation (shakeTime, new Vector3 (strength, strength, strength)));
 				StartCoroutine (ScaleToAnimation (scaleTime, scaleTo));
 		}
+
+		public IEnumerator ShakeRotationAnimation (float time, Vector3 shakeAmount, bool loop = false, iTween.LoopType loopType = iTween.LoopType.none)
+		{
+				isTweening = true;
+		
+				iTween.ShakeRotation (this.gameObject, iTween.Hash (iT.ShakeRotation.amount, shakeAmount,
+		                                                    iT.ShakeRotation.time, time,
+		                                                    iT.ShakeRotation.looptype, loopType));
+		
+				yield return new WaitForSeconds (time);
+		
+				isTweening = false;
+		}
+
+		public IEnumerator ShakePositionAnimation (float time, Vector3 shakeAmount, bool loop = false, iTween.LoopType loopType = iTween.LoopType.none)
+		{
+				isTweening = true;
+		
+				iTween.ShakePosition (this.gameObject, iTween.Hash (iT.ShakePosition.amount, shakeAmount,
+		                                                    iT.ShakePosition.time, time,
+		                                                    iT.ShakePosition.looptype, loopType));
+		
+				yield return new WaitForSeconds (time);
+		
+				isTweening = false;
+		}
 	
+		public IEnumerator ShakeScaleAnimation (float time, Vector3 shakeAmount, bool loop = false, iTween.LoopType loopType = iTween.LoopType.none)
+		{
+				isTweening = true;
+		
+				iTween.ShakeScale (this.gameObject, iTween.Hash (iT.ShakeScale.amount, shakeAmount,
+		                                                 iT.ShakeScale.time, time,
+		                                                 iT.ShakeScale.looptype, loopType));
+		
+				yield return new WaitForSeconds (time);
+		
+				isTweening = false;
+		}
 	#endregion
 }
 

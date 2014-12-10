@@ -80,14 +80,14 @@ public static class UnityShortcuts
 	#region GetChildren
 
 	
-		public static ArrayList getChildrenWithTag (GameObject parent, string tag)
+		public static List<GameObject> getChildrenWithTag (GameObject parent, string tag)
 		{
-				ArrayList children = new ArrayList ();
+				List<GameObject> children = new List<GameObject> ();
 		
 				for (int i = 0; i < parent.transform.childCount; i++) {
 						Transform child = parent.transform.GetChild (i);
 						if (child.gameObject.tag.Equals (tag)) {
-								children.Add (child);	
+								children.Add (child.gameObject);	
 						}
 				}
 		
@@ -108,25 +108,36 @@ public static class UnityShortcuts
 				return null;
 		}
 	
-		public static Transform[] GetOnlyChildren (this Transform trans)
+		public static Transform[] GetOnlyChildren (this Transform trans, bool getRecursive = true)
 		{
 				Transform[] children = trans.GetComponentsInChildren<Transform> ();
-				//Debug.Log ("length " + children.Length);
+				//Debug.Log ("GetOnlyChildren initial length " + children.Length);
+				//Debug.Log ("GetOnlyChildren recursive: " + children.Length + " parts and direct: " + trans.childCount);
+
 		
 				if (children.Length > 1) {
-						Transform[] exceptMySelf = new Transform [children.Length - 1];
+						List<Transform> exceptMySelf = new List<Transform> ();
 						int newIndex = 0;
-			
+
 						for (int i = 0; i < children.Length; i++) {
 								Transform child = children [i];
+
 								if (child != trans) {
-										exceptMySelf [newIndex] = child;
-										newIndex++;
+
+										if (getRecursive) {
+												exceptMySelf.Add (child);
+												newIndex++;
+										} else if (!getRecursive && child.parent == trans) {
+												//Debug.Log (i + " child.parent == trans " + (child.parent == trans));
+												//only allow direct childrend
+												exceptMySelf.Add (child);
+												newIndex++;
+										}
 								}
 						}
 			
-						//Debug.Log ("return length " + exceptMySelf.Length);
-						return exceptMySelf;
+						//Debug.Log ("GetOnlyChildren return length " + exceptMySelf.Length);
+						return exceptMySelf.ToArray ();
 				}
 		
 				return null;
@@ -257,7 +268,7 @@ public static class UnityShortcuts
 		public static double getTimestampDiff (DateTime first, DateTime second)
 		{
 				TimeSpan diff = first.Subtract (second);
-				//Debug.Log ("first " + first + " second " + second + " Timestamp diff: " + diff);
+
 				return diff.TotalMilliseconds;
 		}
 
@@ -322,5 +333,123 @@ public static class UnityShortcuts
 		}
 
 	#endregion
+
+	#region SpriteMethods
+
+
+		/// <summary>
+		/// Gets a sprite from any path
+		/// </summary>
+		/// <returns>The sprite from WW.</returns>
+		/// <param name="fullPath">Full path.</param>
+		public static Sprite getSpriteFromWWW (string fullPath, bool packTight = false)
+		{
+				fullPath = "file:///" + fullPath;
+				WWW wwwLoader = new WWW (fullPath);
+				//Debug.Log ("loading texture " + fullPath + " via www, loaded: " + wwwLoader.bytes.Length + " bytes");
+				Rect rect = new Rect (0, 0, wwwLoader.texture.width, wwwLoader.texture.height);
+				SpriteMeshType meshType = SpriteMeshType.FullRect;
+				if (packTight) {
+						meshType = SpriteMeshType.Tight;
+				}
+		
+				// use 100f to scale down
+				Sprite spr = Sprite.Create (wwwLoader.texture, rect, new Vector2 (0.5f, 0.5f), 100f, 0, meshType);
+				spr.name = fullPath.Substring (fullPath.LastIndexOf ("/") + 1);
+				return spr;
+		}
+
+		public static Mesh getMeshFromSprite (Sprite spr)
+		{
+				Vector2[] spriteVerts = UnityEditor.Sprites.DataUtility.GetSpriteMesh (spr, false);
+				ushort[] spriteIndices = UnityEditor.Sprites.DataUtility.GetSpriteIndices (spr, false);
+				List<Vector3> meshVerts = new List<Vector3> ();
+				List<int> meshIndices = new List<int> ();
+				foreach (Vector2 v2 in spriteVerts) {
+						meshVerts.Add (new Vector3 (v2.x, v2.y, 0));
+				}
+				foreach (ushort indice in spriteIndices) {
+						meshIndices.Add ((int)indice);
+				}
+				Mesh spriteMesh = new Mesh ();
+				spriteMesh.vertices = meshVerts.ToArray ();
+				spriteMesh.triangles = meshIndices.ToArray ();
+		
+				return spriteMesh;
+		}
+
+/*		public static string getSpritePath (Sprite spr, string pattern)
+		{
+
+				Directory.GetFiles (Application.dataPath, pattern);
+				return "";
+		}
+*/
+		public static float WidthUnits (Sprite spr)
+		{
+				Debug.Log ("w: " + spr.rect.width + " x: " + spr.bounds.size.x + " = " + (spr.rect.width / spr.bounds.size.x));
+				return spr.rect.width / spr.bounds.size.x;
+		}
+
+		public static float HeightUnits (Sprite spr)
+		{
+				Debug.Log ("h: " + spr.rect.height + " y: " + spr.bounds.size.y + " = " + (spr.rect.height / spr.bounds.size.y));
+				return spr.rect.height / spr.bounds.size.y;
+		}
+
+	#endregion
+
+		public static Vector3 RandomCircleFixY (Vector3 center, float radius)
+		{
+				float angle = UnityEngine.Random.value * 360;
+				Vector3 pos;
+
+				pos.x = center.x + radius * Mathf.Sin (angle * Mathf.Deg2Rad);
+
+				//if (fixY) {
+				pos.y = center.y;
+/*				} else {
+						pos.y = center.y + radius * Mathf.Cos (angle * Mathf.Deg2Rad);
+				}*/
+
+				pos.z = center.z + radius * Mathf.Cos (angle * Mathf.Deg2Rad);
+
+				return pos;
+		}
+
+		public static Vector3 RandomCircleFixZ (Vector3 center, float radius)
+		{
+				float angle = UnityEngine.Random.value * 360;
+				Vector3 pos;
+		
+				pos.x = center.x + radius * Mathf.Sin (angle * Mathf.Deg2Rad);		
+				pos.y = center.y + radius * Mathf.Cos (angle * Mathf.Deg2Rad);
+				pos.z = center.z;
+
+				return pos;
+		}
+
+
+		public static int getRandomWithException (int from, int to, int exception)
+		{
+				int newRandom = UnityEngine.Random.Range (from, to);
+		
+				while (exception == newRandom) {
+						newRandom = UnityEngine.Random.Range (from, to);
+				}
+		
+				return newRandom;
+		}
+
+/*		public static int getRandomWithException (int from, int to, List<int> exceptions)
+		{
+				int newRandom = UnityEngine.Random.Range (from, to);
+		
+				while (exception == newRandom) {
+						newRandom = UnityEngine.Random.Range (from, to);
+				}
+		
+				return newRandom;
+		}*/
 
 }
